@@ -41,7 +41,6 @@ class SimpleCarrier {
 	static final int SHOWINGFILE = 5;
 
 	private static String sCurrentUserId = null;
-	private static FileTransferInfo sCurrentFileTransferInfo = null;
 
 	static SimpleCarrier getInstance(Context context, Handler handler) {
 		if (sSimpleCarrier == null) {
@@ -64,14 +63,26 @@ class SimpleCarrier {
 		}
 	}
 
+	private static String sSendFilePath = null;
 	void sendFile(String filePath) {
 		try {
+			if (sCurrentUserId == null) {
+				sendShowingMessage("The friend is Offline");
+			}
+
+			sSendFilePath = filePath;
 			String fileId = FileTransfer.generateFileId();
 			File file = new File(filePath);
-			sCurrentFileTransferInfo = new FileTransferInfo(filePath, fileId, file.length());
+			Log.i(TAG, "sendFile file name="+file.getName());
+			FileTransferInfo currentFileTransferInfo = new FileTransferInfo(file.getName(), fileId, file.length());
 
-			sFileTransfer = sFileTransferManager.newFileTransfer(sCurrentUserId, sCurrentFileTransferInfo, mTransferHandler);
-			sFileTransfer.connect();
+			if (sFileTransfer == null) {
+				sFileTransfer = sFileTransferManager.newFileTransfer(sCurrentUserId, currentFileTransferInfo, mTransferHandler);
+				sFileTransfer.connect();
+			}
+			else {
+				sFileTransfer.addFile(currentFileTransferInfo);
+			}
 		}
 		catch (CarrierException e) {
 			e.printStackTrace();
@@ -159,14 +170,18 @@ class SimpleCarrier {
 			sendShowingMessage("onPullRequest");
 
 			try {
-				String filePath = sCurrentFileTransferInfo.getFileName();
-				byte[] data = getFileData(filePath);
+				if (sSendFilePath != null && !sSendFilePath.isEmpty()) {
+					byte[] data = getFileData(sSendFilePath);
 
-				//write Data
-				writeData(fileId, data);
+					//write Data
+					writeData(fileId, data);
+				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
+			}
+			finally {
+				sSendFilePath = "";
 			}
 		}
 
@@ -269,13 +284,14 @@ class SimpleCarrier {
 		@Override
 		public void onFriendConnection(Carrier carrier, String friendId, ConnectionStatus status) {
 			Log.d(TAG, "onFriendConnection= status="+status);
-			sCurrentUserId = friendId;
 
 			Message msg = new Message();
 			msg.what = FRIENDONLINE;
 			msg.obj = "The friend is Offline";
+			sCurrentUserId = null;
 			if (status == ConnectionStatus.Connected) {
 				msg.obj = "The friend is Online";
+				sCurrentUserId = friendId;
 			}
 			mHandler.sendMessage(msg);
 		}

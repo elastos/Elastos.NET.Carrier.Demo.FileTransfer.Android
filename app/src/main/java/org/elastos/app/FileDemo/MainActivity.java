@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
 			switch (msg.what) {
 				case SimpleCarrier.ONREADY: {
 					mQRCodeImage.setImageBitmap(QRCodeUtils.createQRCodeBitmap(sSimpleCarrier.MyAddress()));
+					Log.d(TAG, String.format("MyAddress=[%s]",sSimpleCarrier.MyAddress()));
 					break;
 				}
 				case SimpleCarrier.FRIENDONLINE : {
@@ -140,19 +141,23 @@ public class MainActivity extends AppCompatActivity {
 	    IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 	    if (scanResult != null) {
 		    String result = scanResult.getContents();
-		    mScancontent.setText(result);
+		    if (result != null && !result.isEmpty()) {
+			    mScancontent.setText(result);
 
-		    //TODO Add friend.
-		    Log.d(TAG, String.format("onActivityResult==state=[%s]",scanResult));
-		    sSimpleCarrier.AddFriend(result);
-		    Toast.makeText(this,result, Toast.LENGTH_LONG).show();
+			    //TODO Add friend.
+			    Log.d(TAG, String.format("onActivityResult==scanResult=[%s]",result));
+			    sSimpleCarrier.AddFriend(result);
+			    Toast.makeText(this,result, Toast.LENGTH_LONG).show();
+		    }
 		    return;
 	    }
 
         if(requestCode == SELECTFILE_REQUEST_CODE) {
-	        String path = Utils.getPhotoPathFromContentUri(this, data.getData());
-	        Log.d(TAG, "onActivityResult file path="+path);
-	        mFilePath.setText(path);
+	    	if (data != null) {
+			    String path = Utils.getPhotoPathFromContentUri(this, data.getData());
+			    Log.d(TAG, "onActivityResult file path="+path);
+			    mFilePath.setText(path);
+		    }
         }
     }
 
