@@ -252,7 +252,7 @@ class SimpleCarrier {
 					rc = sFileTransfer.writeData(fileId, data, pos, left);
 					pos += rc;
 					left -= rc;
-					Log.d(TAG, String.format("writeData len = [%d]", rc));
+					Log.d(TAG, String.format("writeData len = [%d], COUNT=[%d], index=[%d]", rc, COUNT, i));
 				}
 				catch (CarrierException e) {
 					int errorCode = e.getErrorCode();
