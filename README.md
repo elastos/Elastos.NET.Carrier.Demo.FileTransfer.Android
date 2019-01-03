@@ -1,7 +1,21 @@
 # Carrier File AppDemo
 
+###1. Purpose of repository
+The main purpose of this repository is to demonstrate how to use filetransfer APIs of Carrier module.
 
-  The main purpose of this repository is to demonstrates how to use filetransfer APIs of Carrier module. But first, you should generate the aar file from [Elastos.NET.Carrier.Android.SDK](https://github.com/elastos/Elastos.NET.Carrier.Android.SDK), this project will use it.
+###2.  Build Android Carrier Package
+With repository of [Elastos.NET.Carrier.Android.SDK](https://github.com/elastos/Elastos.NET.Carrier.Android.SDK),  the package *org.elastos.carrier-debug.aar*  would be built out from directory **app/build/outputs/aar** .
 
-  * If you have the aar file, put it in the directory app/libs/. And then sync project, you will make this project run.
+
+###3.  Build project
+
+Copy package *org.elastos.carrier-debug.aar* to directory **app/libs** , then use **Android Studio** to open this project. Then select **Build** menu and click **Make project** to build the whole project.
+
+### 4. Run App
+
+Select **Run** menu and click **run app** as long as phone has been connected.
+
+### 5. License
+MIT @Elastos Foundation
+
 

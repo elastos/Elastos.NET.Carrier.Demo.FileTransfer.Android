@@ -9,6 +9,4 @@
 .DS_Store
 /build
 /captures
-.externalNativeBuild
-/app/native-dist/libs
-
+/app/libs
