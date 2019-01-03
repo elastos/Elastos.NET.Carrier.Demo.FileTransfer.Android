@@ -39,6 +39,7 @@ class SimpleCarrier {
 	static final int SHOWING = 3;
 	static final int SHOWINGTEXT = 4;
 	static final int SHOWINGFILE = 5;
+	static final int SENDINGDATA = 6;
 
 	private static String sCurrentUserId = null;
 
@@ -74,7 +75,7 @@ class SimpleCarrier {
 			String fileId = FileTransfer.generateFileId();
 			File file = new File(filePath);
 			Log.i(TAG, "sendFile file name="+file.getName());
-			FileTransferInfo currentFileTransferInfo = new FileTransferInfo(file.getName(), fileId, file.length());
+			FileTransferInfo currentFileTransferInfo = new FileTransferInfo(filePath, fileId, file.length());
 
 			if (sFileTransfer == null) {
 				sFileTransfer = sFileTransferManager.newFileTransfer(sCurrentUserId, currentFileTransferInfo, mTransferHandler);
@@ -167,22 +168,7 @@ class SimpleCarrier {
 
 		@Override
 		public void onPullRequest(FileTransfer filetransfer, String fileId, long offset) {
-			sendShowingMessage("onPullRequest");
-
-			try {
-				if (sSendFilePath != null && !sSendFilePath.isEmpty()) {
-					byte[] data = getFileData(sSendFilePath);
-
-					//write Data
-					writeData(fileId, data);
-				}
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			finally {
-				sSendFilePath = "";
-			}
+			sendMessage(SENDINGDATA, fileId);
 		}
 
 		@Override
@@ -191,13 +177,13 @@ class SimpleCarrier {
 
 			sReceiveDataCount ++;
 			sReceiveDataLen += data.length;
-			sendShowingMessage(SHOWINGTEXT, String.format(Locale.US, "ReceiveData  count = [%d], Len=[%d]", sReceiveDataCount, sReceiveDataLen));
+			sendMessage(SHOWINGTEXT, String.format(Locale.US, "ReceiveData  count = [%d], Len=[%d]", sReceiveDataCount, sReceiveDataLen));
 
 			if (sReceiveFileSize == sReceiveDataLen) {
 				//TODO: show the image.
 				String filePath = sBasePath + "/" + System.currentTimeMillis();
 				Utils.byte2image(sReceiveFileData, filePath);
-				sendShowingMessage(SHOWINGFILE, filePath);
+				sendMessage(SHOWINGFILE, filePath);
 			}
 			return true;
 		}
@@ -223,6 +209,23 @@ class SimpleCarrier {
 		}
 	}
 
+	void sendData(String fileId) {
+		try {
+			if (sSendFilePath != null && !sSendFilePath.isEmpty()) {
+				byte[] data = getFileData(sSendFilePath);
+
+				//write Data
+				writeData(fileId, data);
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			sSendFilePath = "";
+		}
+	}
+
 	private static void writeData(String fileId, byte[] data)
 	{
 		final int SIZE = 512/*1024*/;
@@ -234,7 +237,7 @@ class SimpleCarrier {
 			COUNT += 1;
 		}
 
-		sendShowingMessage(SHOWINGTEXT, String.format(Locale.US, "writeData  COUNT=[%d], SIZE=[%d], len=[%d]", COUNT, SIZE, data.length));
+		sendMessage(SHOWINGTEXT, String.format(Locale.US, "writeData  COUNT=[%d], SIZE=[%d], len=[%d]", COUNT, SIZE, data.length));
 		int pos = 0;
 		int rc;
 
@@ -252,7 +255,7 @@ class SimpleCarrier {
 					rc = sFileTransfer.writeData(fileId, data, pos, left);
 					pos += rc;
 					left -= rc;
-					Log.d(TAG, String.format("writeData len = [%d], COUNT=[%d], index=[%d]", rc, COUNT, i));
+					Log.d(TAG, String.format("writeData [end]  len = [%d], COUNT=[%d], index=[%d]", rc, COUNT, i));
 				}
 				catch (CarrierException e) {
 					int errorCode = e.getErrorCode();
@@ -338,7 +341,7 @@ class SimpleCarrier {
 		mHandler.sendMessage(msg);
 	}
 
-	private static void sendShowingMessage(int what, String content) {
+	private static void sendMessage(int what, String content) {
 		Message msg = new Message();
 		msg.what = what;
 		msg.obj = content;

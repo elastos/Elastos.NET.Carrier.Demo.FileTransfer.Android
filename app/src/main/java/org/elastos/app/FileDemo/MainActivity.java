@@ -126,6 +126,11 @@ public class MainActivity extends AppCompatActivity {
 					mShowingText.setText(text);
 					break;
 				}
+				case SimpleCarrier.SENDINGDATA: {
+					String fileId = (String)msg.obj;
+					sendData(fileId);
+					break;
+				}
 				case SimpleCarrier.SHOWINGFILE: {
 					String filePath = (String)msg.obj;
 					mReceiveFile.setImageBitmap(BitmapFactory.decodeFile(filePath));
@@ -133,6 +138,19 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		}
+	}
+
+	private void sendData(final String fileId) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					sSimpleCarrier.sendData(fileId);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+		} }).start();
 	}
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
