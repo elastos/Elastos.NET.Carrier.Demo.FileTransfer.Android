@@ -33,7 +33,7 @@ class SimpleCarrier {
 	private static String sBasePath;
 
 	//MSG TYPE
-	static final int ADDRESS = 0;
+	static final int ONREADY = 0;
 	static final int TRANSFERSTATE = 1;
 	static final int FRIENDONLINE = 2;
 	static final int SHOWING = 3;
@@ -139,7 +139,6 @@ class SimpleCarrier {
 	}
 
 	private static long sReceiveDataLen = 0;
-	private static int sReceiveDataCount = 0;
 	private static long sReceiveFileSize = 0;
 	static class TransferHandler implements FileTransferHandler {
 		@Override
@@ -151,7 +150,6 @@ class SimpleCarrier {
 		@Override
 		public void onFileRequest(FileTransfer filetransfer, String fileId, String filename, long size) {
 			sReceiveDataLen = 0;
-			sReceiveDataCount = 0;
 			sReceiveFileSize = size;
 
 			sendShowingMessage("onFileRequest");
@@ -173,9 +171,9 @@ class SimpleCarrier {
 
 		@Override
 		public boolean onData(FileTransfer filetransfer, String fileId, byte[] data) {
-			sReceiveDataCount ++;
 			sReceiveDataLen += data.length;
-			sendMessage(SHOWINGTEXT, String.format(Locale.US, "ReceiveData  count = [%d], Len=[%d]", sReceiveDataCount, sReceiveDataLen));
+			String percentString = "" + (sReceiveDataLen * 100 / sReceiveFileSize) + "%";
+			sendMessage(SHOWINGTEXT, String.format(Locale.US, "Receiving File: Length=[%d], Percent=[%s]", sReceiveDataLen, percentString));
 
 			String filePath = sBasePath + "/" + fileId.substring(0, 8);
 			Utils.byte2File(data, filePath);
@@ -229,7 +227,7 @@ class SimpleCarrier {
 							sent += len;
 							Log.d(TAG, String.format(Locale.US, "sending len=[%d]", sent));
 							percentString = "" + (sent * 100 / FILESIZE) + "%";
-							sendMessage(SHOWINGTEXT, String.format("sending: sent=[%d], percent[%s]", sent, percentString));
+							sendMessage(SHOWINGTEXT, String.format(Locale.US, "Sending: Sent=[%d], Percent=[%s]", sent, percentString));
 						}
 					}
 					catch (IOException e) {
@@ -272,11 +270,13 @@ class SimpleCarrier {
 		@Override
 		public void onReady(Carrier carrier) {
 			Log.d(TAG, "===onReady===");
+			sendMessage(ONREADY, "onReady");
 		}
 
 		@Override
 		public void onFriendRequest(Carrier carrier, String userId, UserInfo info, String hello) {
 			try {
+				sendShowingMessage("onFriendRequest:" + userId);
 				carrier.acceptFriend(userId);
 			}
 			catch (CarrierException e) {
@@ -286,19 +286,19 @@ class SimpleCarrier {
 
 		@Override
 		public void onFriendConnection(Carrier carrier, String friendId, ConnectionStatus status) {
+			sendShowingMessage("onFriendConnection:" + friendId);
 			Log.d(TAG, "onFriendConnection= status="+status);
 
 			Message msg = new Message();
 			msg.what = FRIENDONLINE;
-			String content = "The friend is Offline";
+			msg.arg1 = 0;
 			sCurrentUserId = null;
 			if (status == ConnectionStatus.Connected) {
-				content = "The friend is Online";
 				sCurrentUserId = friendId;
+				msg.arg1 = 1;
 			}
 
-			content += " : " + friendId.substring(0, 8);
-			msg.obj = content;
+			msg.obj = "Friend " + friendId.substring(0, 8);
 			mHandler.sendMessage(msg);
 		}
 	}

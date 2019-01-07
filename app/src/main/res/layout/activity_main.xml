@@ -17,21 +17,33 @@
         android:id="@+id/addfriend"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="AddFriend" />
+        android:enabled="false"
+        android:textAllCaps="false"
+        android:text="Add Friend" />
 
-    <TextView
-        android:id="@+id/friendOnline"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Offline"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/friendId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Friend "/>
+
+        <TextView
+            android:id="@+id/friendOnline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Offline" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/selectFile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textAllCaps="false"
         android:text="Select File" />
 
     <TextView
@@ -43,18 +55,28 @@
         android:textSize="10sp"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/filetransferState"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FileTransfer state "/>
+
+        <TextView
+            android:id="@+id/filetransferState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/filetransfer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:enabled="false"
+        android:textAllCaps="false"
         android:text="Transfer File" />
 
     <TextView

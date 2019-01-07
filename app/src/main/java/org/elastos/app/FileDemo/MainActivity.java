@@ -29,10 +29,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView mFileTransferState;
 	private TextView mFilePath;
 	private TextView mFriendOnline;
+	private TextView mFriendId;
 	private TextView mShowingText;
 	private ImageView mQRCodeImage;
 	private ImageView mReceiveFile;
 	private Handler mHandler;
+	private Button mAddFriendButton;
+	private Button mTransferButton;
 	private static SimpleCarrier sSimpleCarrier;
 
 	private static final int SELECTFILE_REQUEST_CODE = 0x02;
@@ -49,11 +52,12 @@ public class MainActivity extends AppCompatActivity {
 	    mFileTransferState = findViewById(R.id.filetransferState);
 	    mFilePath = findViewById(R.id.filePath);
 	    mFriendOnline = findViewById(R.id.friendOnline);
+	    mFriendId = findViewById(R.id.friendId);
 		mShowingText = findViewById(R.id.showingText);
 	    mQRCodeImage = findViewById(R.id.myaddressqrcode);
 		mReceiveFile = findViewById(R.id.receiveFile);
-        Button addFriendButton = findViewById(R.id.addfriend);
-        addFriendButton.setOnClickListener(new View.OnClickListener() {
+	    mAddFriendButton = findViewById(R.id.addfriend);
+	    mAddFriendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showCamera();
@@ -71,19 +75,19 @@ public class MainActivity extends AppCompatActivity {
 		    }
 	    });
 
-	    Button transferButton = findViewById(R.id.filetransfer);
-	    transferButton.setOnClickListener(new View.OnClickListener() {
+	    mTransferButton = findViewById(R.id.filetransfer);
+	    mTransferButton.setOnClickListener(new View.OnClickListener() {
 		    @Override
 		    public void onClick(View view) {
 			    String path = mFilePath.getText().toString();
 			    Log.d(TAG, "Sending file path="+path);
 			    if (path.isEmpty()) {
-				    Toast.makeText(MainActivity.this, "Path is empty.", Toast.LENGTH_SHORT).show();
+				    ShowText("Path is empty.");
 				    return;
 			    }
 
 			    if (sSimpleCarrier == null) {
-				    Toast.makeText(MainActivity.this, "Carrier is null", Toast.LENGTH_SHORT).show();
+				    ShowText("Carrier is null");
 			    	return;
 			    }
 
@@ -95,36 +99,44 @@ public class MainActivity extends AppCompatActivity {
 	    requestWriteAndReadExternalPermission();
 
 	    mHandler = new CarrierHandler();
-	    Thread thread = new Thread(new Runnable() {
-		    @Override
-		    public void run() {
-			    sSimpleCarrier = SimpleCarrier.getInstance(MainActivity.this, mHandler);
 
-			    Message msg = new Message();
-			    msg.what = SimpleCarrier.ADDRESS;
-			    mHandler.sendMessage(msg);
-		    }
-	    });
-	    thread.start();
+	    sSimpleCarrier = SimpleCarrier.getInstance(MainActivity.this, mHandler);
+	    mQRCodeImage.setImageBitmap(QRCodeUtils.createQRCodeBitmap(sSimpleCarrier.MyAddress()));
+	    Log.d(TAG, String.format("MyAddress=[%s]",sSimpleCarrier.MyAddress()));
+    }
+
+    private void ShowText(String text) {
+	    Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
     }
 
 	public class CarrierHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-				case SimpleCarrier.ADDRESS: {
-					mQRCodeImage.setImageBitmap(QRCodeUtils.createQRCodeBitmap(sSimpleCarrier.MyAddress()));
-					Log.d(TAG, String.format("MyAddress=[%s]",sSimpleCarrier.MyAddress()));
+				case SimpleCarrier.ONREADY: {
+					mAddFriendButton.setEnabled(true);
+					mTransferButton.setEnabled(true);
+					String text = (String)msg.obj;
+					ShowText(text);
+
 					break;
 				}
 				case SimpleCarrier.FRIENDONLINE : {
-					String online = (String)msg.obj;
-					mFriendOnline.setText(online);
+					String id = (String)msg.obj;
+					mFriendId.setText(id + " : ");
+					if (msg.arg1 == 1) {
+						mFriendOnline.setTextColor(Color.GREEN);
+						mFriendOnline.setText("Online");
+					}
+					else {
+						mFriendOnline.setText("Offline");
+						mFriendOnline.setTextColor(Color.BLACK);
+					}
 					break;
 				}
 				case SimpleCarrier.SHOWING: {
 					String text = (String)msg.obj;
-					Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
+					ShowText(text);
 					break;
 				}
 				case SimpleCarrier.SHOWINGTEXT: {
@@ -140,11 +152,10 @@ public class MainActivity extends AppCompatActivity {
 				case SimpleCarrier.SHOWINGFILEPATH: {
 					String filePath = (String)msg.obj;
 					mReceiveFile.setImageBitmap(BitmapFactory.decodeFile(filePath));
-					mShowingText.setText("Received file path=" + filePath);
+					mShowingText.setText("Received file: " + filePath);
 					break;
 				}
 				case SimpleCarrier.TRANSFERSTATE: {
-					//TODO
 					String state = (String)msg.obj;
 					if (FileTransferState.Failed.toString().equals(state)) {
 						//Font color: Red
@@ -155,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
 						mFileTransferState.setTextColor(Color.GREEN);
 					}
 
-					mFileTransferState.setText("FileTransfer state: " + state);
+					mFileTransferState.setText(state);
 					break;
 				}
 			}
