@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
 				case SimpleCarrier.SHOWINGFILE: {
 					String filePath = (String)msg.obj;
 					mReceiveFile.setImageBitmap(BitmapFactory.decodeFile(filePath));
+					mShowingText.setText("Received file path="+filePath);
 					break;
 				}
 			}

@@ -12,16 +12,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 class Utils {
-	static void byte2image(byte[] data, String path){
+	static void byte2File(byte[] data, String path){
 		if(data.length<3 || path.equals("")) return;
 		try{
-			FileOutputStream output = new FileOutputStream(new File(path));
+			FileOutputStream output = new FileOutputStream(new File(path), true);
 			output.write(data, 0, data.length);
 			output.flush();
 			output.close();
-			System.out.println("Make Picture success,Please find image in " + path);
 		} catch(Exception ex) {
-			System.out.println("Exception: " + ex);
 			ex.printStackTrace();
 		}
 	}

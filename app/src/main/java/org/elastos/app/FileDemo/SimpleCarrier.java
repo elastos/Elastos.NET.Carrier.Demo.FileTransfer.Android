@@ -17,7 +17,6 @@ import org.elastos.carrier.filetransfer.FileTransferState;
 import org.elastos.carrier.filetransfer.Manager;
 import org.elastos.carrier.filetransfer.ManagerHandler;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -141,7 +140,6 @@ class SimpleCarrier {
 	private static long sReceiveDataLen = 0;
 	private static int sReceiveDataCount = 0;
 	private static long sReceiveFileSize = 0;
-	private static byte[] sReceiveFileData;
 	static class TransferHandler implements FileTransferHandler {
 		@Override
 		public void onStateChanged(FileTransfer filetransfer, FileTransferState state) {
@@ -153,7 +151,6 @@ class SimpleCarrier {
 			sReceiveDataLen = 0;
 			sReceiveDataCount = 0;
 			sReceiveFileSize = size;
-			sReceiveFileData = new byte[(int)size];
 
 			sendShowingMessage("onFileRequest");
 
@@ -168,21 +165,21 @@ class SimpleCarrier {
 
 		@Override
 		public void onPullRequest(FileTransfer filetransfer, String fileId, long offset) {
+			sendShowingMessage("Start Sending data");
 			sendMessage(SENDINGDATA, fileId);
 		}
 
 		@Override
 		public boolean onData(FileTransfer filetransfer, String fileId, byte[] data) {
-			System.arraycopy(data, 0, sReceiveFileData, (int)sReceiveDataLen, data.length);
-
 			sReceiveDataCount ++;
 			sReceiveDataLen += data.length;
 			sendMessage(SHOWINGTEXT, String.format(Locale.US, "ReceiveData  count = [%d], Len=[%d]", sReceiveDataCount, sReceiveDataLen));
 
+			String filePath = sBasePath + "/" + fileId;
+			Utils.byte2File(data, filePath);
+
 			if (sReceiveFileSize == sReceiveDataLen) {
-				//TODO: show the image.
-				String filePath = sBasePath + "/" + System.currentTimeMillis();
-				Utils.byte2image(sReceiveFileData, filePath);
+				//TODO: show the File path.
 				sendMessage(SHOWINGFILE, filePath);
 			}
 			return true;
@@ -212,10 +209,30 @@ class SimpleCarrier {
 	void sendData(String fileId) {
 		try {
 			if (sSendFilePath != null && !sSendFilePath.isEmpty()) {
-				byte[] data = getFileData(sSendFilePath);
-
-				//write Data
-				writeData(fileId, data);
+				File file = new File(sSendFilePath);
+				if (file.isFile()) {
+					final long FILESIZE = file.length();
+					sendMessage(SHOWINGTEXT, String.format(Locale.US, "sendData start: fileSize=[%d]", FILESIZE));
+					FileInputStream fis;
+					try {
+						final int SIZE = 1024;
+						fis = new FileInputStream(file);
+						byte[] buffer = new byte[SIZE];
+						int len, total = 0;
+						while ((len = fis.read(buffer)) != -1) {
+							//write Data
+							writeData(fileId, buffer, len);
+							total += len;
+							Log.d(TAG, String.format(Locale.US, "sending len=[%d]", total));
+							sendMessage(SHOWINGTEXT, String.format("sending fileSize=[%d], sent=[%d], percent[]", FILESIZE, total));
+						}
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+					Log.d(TAG, "sendData==================Finish");
+					sendShowingMessage("Sending file Finished.");
+				}
 			}
 		}
 		catch (Exception e) {
@@ -226,46 +243,24 @@ class SimpleCarrier {
 		}
 	}
 
-	private static void writeData(String fileId, byte[] data)
+	private static void writeData(String fileId, byte[] data, int len)
 	{
-		final int SIZE = 512/*1024*/;
-		final int LEN = data.length;
-		int flag = LEN % SIZE;
-
-		int COUNT = LEN / SIZE;
-		if (flag > 0) {
-			COUNT += 1;
-		}
-
-		sendMessage(SHOWINGTEXT, String.format(Locale.US, "writeData  COUNT=[%d], SIZE=[%d], len=[%d]", COUNT, SIZE, data.length));
 		int pos = 0;
 		int rc;
 
-		int left;
-		for (int i = 0; i < COUNT; i++) {
-			left = SIZE;
-
-			//Last
-			if (i == (COUNT -1)) {
-				left = LEN - i * SIZE;
+		int left = len;
+		while(left > 0) {
+			try {
+				rc = sFileTransfer.writeData(fileId, data, pos, left);
+				pos += rc;
+				left -= rc;
 			}
-
-			while(left > 0) {
-				try {
-					rc = sFileTransfer.writeData(fileId, data, pos, left);
-					pos += rc;
-					left -= rc;
-					Log.d(TAG, String.format("writeData [end]  len = [%d], COUNT=[%d], index=[%d]", rc, COUNT, i));
-				}
-				catch (CarrierException e) {
-					int errorCode = e.getErrorCode();
-					Log.d(TAG, String.format("Write data failed (0x%x)", errorCode));
-					e.printStackTrace();
-				}
+			catch (CarrierException e) {
+				int errorCode = e.getErrorCode();
+				Log.d(TAG, String.format("Write data failed (0x%x)", errorCode));
+				e.printStackTrace();
 			}
 		}
-
-		Log.d(TAG, String.format("writeData=[%s]=================","Finish"));
 	}
 
 	static class CarrierHandler extends AbstractCarrierHandler {
@@ -299,34 +294,6 @@ class SimpleCarrier {
 			mHandler.sendMessage(msg);
 		}
 	}
-
-	private static byte[] getFileData(String filePath) {
-		if (filePath == null || filePath.isEmpty()) {
-			return null;
-		}
-
-		File file = new File(filePath);
-		if (file.isFile()) {
-			FileInputStream fis;
-			try {
-				fis = new FileInputStream(file);
-				byte[] buffer = new byte[1024];
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				int len;
-				while ((len = fis.read(buffer)) != -1) {
-					outputStream.write(buffer, 0, len);
-				}
-
-				return outputStream.toByteArray();
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return null;
-	}
-
 
 	private static void sendMessage() {
 		Message msg = new Message();
