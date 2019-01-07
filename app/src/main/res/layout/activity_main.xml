@@ -7,16 +7,6 @@
     android:orientation="vertical"
     tools:context="org.elastos.app.FileDemo.MainActivity">
 
-    <TextView
-        android:id="@+id/scancontent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="My Address:"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/myaddressqrcode"
         android:layout_width="480dp"
@@ -34,7 +24,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Offline"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -43,13 +32,21 @@
         android:id="@+id/selectFile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select" />
+        android:text="Select File" />
 
     <TextView
         android:id="@+id/filePath"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:textSize="10sp"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/filetransferState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -58,13 +55,12 @@
         android:id="@+id/filetransfer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Transfer" />
+        android:text="Transfer File" />
 
     <TextView
         android:id="@+id/showingText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

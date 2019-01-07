@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
 import android.support.design.widget.Snackbar;
@@ -21,9 +22,11 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import org.elastos.carrier.filetransfer.FileTransferState;
+
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
-    private TextView mScancontent;
+    private TextView mFileTransferState;
 	private TextView mFilePath;
 	private TextView mFriendOnline;
 	private TextView mShowingText;
@@ -43,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void InitView() {
-        mScancontent = findViewById(R.id.scancontent);
+	    mFileTransferState = findViewById(R.id.filetransferState);
 	    mFilePath = findViewById(R.id.filePath);
 	    mFriendOnline = findViewById(R.id.friendOnline);
 		mShowingText = findViewById(R.id.showingText);
@@ -96,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
 		    @Override
 		    public void run() {
 			    sSimpleCarrier = SimpleCarrier.getInstance(MainActivity.this, mHandler);
+
+			    Message msg = new Message();
+			    msg.what = SimpleCarrier.ADDRESS;
+			    mHandler.sendMessage(msg);
 		    }
 	    });
 	    thread.start();
@@ -104,9 +111,8 @@ public class MainActivity extends AppCompatActivity {
 	public class CarrierHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
-			//TODO
 			switch (msg.what) {
-				case SimpleCarrier.ONREADY: {
+				case SimpleCarrier.ADDRESS: {
 					mQRCodeImage.setImageBitmap(QRCodeUtils.createQRCodeBitmap(sSimpleCarrier.MyAddress()));
 					Log.d(TAG, String.format("MyAddress=[%s]",sSimpleCarrier.MyAddress()));
 					break;
@@ -131,10 +137,25 @@ public class MainActivity extends AppCompatActivity {
 					sendData(fileId);
 					break;
 				}
-				case SimpleCarrier.SHOWINGFILE: {
+				case SimpleCarrier.SHOWINGFILEPATH: {
 					String filePath = (String)msg.obj;
 					mReceiveFile.setImageBitmap(BitmapFactory.decodeFile(filePath));
-					mShowingText.setText("Received file path="+filePath);
+					mShowingText.setText("Received file path=" + filePath);
+					break;
+				}
+				case SimpleCarrier.TRANSFERSTATE: {
+					//TODO
+					String state = (String)msg.obj;
+					if (FileTransferState.Failed.toString().equals(state)) {
+						//Font color: Red
+						mFileTransferState.setTextColor(Color.RED);
+					}
+					else {
+						//Font color: green
+						mFileTransferState.setTextColor(Color.GREEN);
+					}
+
+					mFileTransferState.setText("FileTransfer state: " + state);
 					break;
 				}
 			}
@@ -161,8 +182,6 @@ public class MainActivity extends AppCompatActivity {
 	    if (scanResult != null) {
 		    String result = scanResult.getContents();
 		    if (result != null && !result.isEmpty()) {
-			    mScancontent.setText(result);
-
 			    //TODO Add friend.
 			    Log.d(TAG, String.format("onActivityResult==scanResult=[%s]",result));
 			    sSimpleCarrier.AddFriend(result);
@@ -194,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
     private void requestCameraPermission() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.CAMERA)) {
-            Snackbar.make(mScancontent, "获取摄像头权限",
+            Snackbar.make(mFileTransferState, "获取摄像头权限",
                     Snackbar.LENGTH_INDEFINITE)
                     .setAction("OK", new View.OnClickListener() {
                         @Override

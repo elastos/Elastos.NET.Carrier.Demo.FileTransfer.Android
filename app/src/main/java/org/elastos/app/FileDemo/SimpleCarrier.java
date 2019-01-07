@@ -33,11 +33,12 @@ class SimpleCarrier {
 	private static String sBasePath;
 
 	//MSG TYPE
-	static final int ONREADY = 1;
+	static final int ADDRESS = 0;
+	static final int TRANSFERSTATE = 1;
 	static final int FRIENDONLINE = 2;
 	static final int SHOWING = 3;
 	static final int SHOWINGTEXT = 4;
-	static final int SHOWINGFILE = 5;
+	static final int SHOWINGFILEPATH = 5;
 	static final int SENDINGDATA = 6;
 
 	private static String sCurrentUserId = null;
@@ -143,6 +144,7 @@ class SimpleCarrier {
 	static class TransferHandler implements FileTransferHandler {
 		@Override
 		public void onStateChanged(FileTransfer filetransfer, FileTransferState state) {
+			sendMessage(TRANSFERSTATE, state.toString());
 			Log.d(TAG, String.format("onStateChanged==state=[%s]",state.toString()));
 		}
 
@@ -175,12 +177,12 @@ class SimpleCarrier {
 			sReceiveDataLen += data.length;
 			sendMessage(SHOWINGTEXT, String.format(Locale.US, "ReceiveData  count = [%d], Len=[%d]", sReceiveDataCount, sReceiveDataLen));
 
-			String filePath = sBasePath + "/" + fileId;
+			String filePath = sBasePath + "/" + fileId.substring(0, 8);
 			Utils.byte2File(data, filePath);
 
 			if (sReceiveFileSize == sReceiveDataLen) {
 				//TODO: show the File path.
-				sendMessage(SHOWINGFILE, filePath);
+				sendMessage(SHOWINGFILEPATH, filePath);
 			}
 			return true;
 		}
@@ -218,13 +220,16 @@ class SimpleCarrier {
 						final int SIZE = 1024;
 						fis = new FileInputStream(file);
 						byte[] buffer = new byte[SIZE];
-						int len, total = 0;
+						int len;
+						long sent = 0;
+						String percentString;
 						while ((len = fis.read(buffer)) != -1) {
 							//write Data
 							writeData(fileId, buffer, len);
-							total += len;
-							Log.d(TAG, String.format(Locale.US, "sending len=[%d]", total));
-							sendMessage(SHOWINGTEXT, String.format("sending fileSize=[%d], sent=[%d], percent[]", FILESIZE, total));
+							sent += len;
+							Log.d(TAG, String.format(Locale.US, "sending len=[%d]", sent));
+							percentString = "" + (sent * 100 / FILESIZE) + "%";
+							sendMessage(SHOWINGTEXT, String.format("sending: sent=[%d], percent[%s]", sent, percentString));
 						}
 					}
 					catch (IOException e) {
@@ -266,7 +271,7 @@ class SimpleCarrier {
 	static class CarrierHandler extends AbstractCarrierHandler {
 		@Override
 		public void onReady(Carrier carrier) {
-			sendMessage();
+			Log.d(TAG, "===onReady===");
 		}
 
 		@Override
@@ -285,20 +290,17 @@ class SimpleCarrier {
 
 			Message msg = new Message();
 			msg.what = FRIENDONLINE;
-			msg.obj = "The friend is Offline";
+			String content = "The friend is Offline";
 			sCurrentUserId = null;
 			if (status == ConnectionStatus.Connected) {
-				msg.obj = "The friend is Online";
+				content = "The friend is Online";
 				sCurrentUserId = friendId;
 			}
+
+			content += " : " + friendId.substring(0, 8);
+			msg.obj = content;
 			mHandler.sendMessage(msg);
 		}
-	}
-
-	private static void sendMessage() {
-		Message msg = new Message();
-		msg.what = ONREADY;
-		mHandler.sendMessage(msg);
 	}
 
 	private static void sendShowingMessage(String content) {
