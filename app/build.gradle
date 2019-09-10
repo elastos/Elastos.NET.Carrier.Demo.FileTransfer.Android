@@ -32,7 +32,7 @@ dependencies {
     implementation 'com.journeyapps:zxing-android-embedded:3.6.0'
     implementation 'com.google.zxing:core:3.3.3'
     implementation 'com.android.support:design:28.0.0'
-    implementation 'org.elastos:carrier:5.3.2'
+    implementation 'org.elastos:carrier:5.4.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
